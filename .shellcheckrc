@@ -4,6 +4,9 @@ disable=SC1090
 # Not following: (error message here)
 #   https://www.shellcheck.net/wiki/SC1091
 disable=SC1091
+# Double quote to prevent globbing and word splitting.
+#   https://www.shellcheck.net/wiki/SC2086
+disable=SC2086
 # foo appears unused. Verify it or export it.
 #   https://www.shellcheck.net/wiki/SC2034
 disable=SC2034

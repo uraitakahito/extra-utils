@@ -52,7 +52,7 @@ install_debian_packages() {
     echo "Packages to verify are installed: ${package_list}"
     rm -rf /var/lib/apt/lists/*
     apt-get update -y
-    apt-get -y install --no-install-recommends "${package_list}" 2> >( grep -v 'debconf: delaying package configuration, since apt-utils is not installed' >&2 )
+    apt-get -y install --no-install-recommends ${package_list} 2> >( grep -v 'debconf: delaying package configuration, since apt-utils is not installed' >&2 )
 
     # Get to latest versions of all packages
     if [ "${UPGRADE_PACKAGES}" = "true" ]; then
