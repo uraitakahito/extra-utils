@@ -15,12 +15,27 @@ install_debian_packages() {
     local package_list=""
     if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
         package_list="${package_list} \
+        aggregate \
         bat \
+        dnsutils \
         fzf \
+        gh \
+        git \
+        gnupg2 \
         gpg \
+        iproute2 \
+        ipset \
+        iptables \
         iputils-ping \
+        jq \
+        less \
+        man-db \
+        procps \
+        ripgrep \
+        sudo \
         tmux \
         trash-cli \
+        unzip \
         vim"
     fi
 
@@ -37,7 +52,7 @@ install_debian_packages() {
     echo "Packages to verify are installed: ${package_list}"
     rm -rf /var/lib/apt/lists/*
     apt-get update -y
-    apt-get -y install --no-install-recommends ${package_list} 2> >( grep -v 'debconf: delaying package configuration, since apt-utils is not installed' >&2 )
+    apt-get -y install --no-install-recommends "${package_list}" 2> >( grep -v 'debconf: delaying package configuration, since apt-utils is not installed' >&2 )
 
     # Get to latest versions of all packages
     if [ "${UPGRADE_PACKAGES}" = "true" ]; then
