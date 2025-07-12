@@ -15,12 +15,27 @@ install_debian_packages() {
     local package_list=""
     if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
         package_list="${package_list} \
+        aggregate \
         bat \
+        dnsutils \
         fzf \
+        gh \
+        git \
+        gnupg2 \
         gpg \
+        iproute2 \
+        ipset \
+        iptables \
         iputils-ping \
+        jq \
+        less \
+        man-db \
+        procps \
+        ripgrep \
+        sudo \
         tmux \
         trash-cli \
+        unzip \
         vim"
     fi
 
