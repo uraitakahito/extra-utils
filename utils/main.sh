@@ -32,6 +32,7 @@ install_debian_packages() {
         man-db \
         procps \
         ripgrep \
+        sqlite3 \
         sudo \
         tmux \
         trash-cli \
