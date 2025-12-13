@@ -4,6 +4,7 @@ set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
+ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 
 if [ "$(id -u)" -ne 0 ]; then
     printf 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.\n'

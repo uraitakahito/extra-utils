@@ -4,6 +4,7 @@ set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
+ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -47,6 +48,17 @@ install_debian_packages() {
         chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
         echo "Running apt-get update for eza..."
         package_list="${package_list} eza"
+    fi
+
+    if [ "${ADD_GRPCURL}" = "true" ]; then
+        # https://github.com/fullstorydev/grpcurl/releases
+        GRPCURL_VERSION="1.9.3"
+        ARCH=$(dpkg --print-architecture)
+        DEBFILENAME="grpcurl_${GRPCURL_VERSION}_linux_${ARCH}.deb"
+        wget -qO /tmp/${DEBFILENAME} https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/${DEBFILENAME}
+        apt-get update -y
+        apt-get -y install --no-install-recommends /tmp/${DEBFILENAME}
+        rm /tmp/${DEBFILENAME}
     fi
 
     # Install the list of packages
