@@ -31,6 +31,7 @@ install_debian_packages() {
         jq \
         less \
         man-db \
+        netcat-openbsd \
         procps \
         ripgrep \
         sqlite3 \
