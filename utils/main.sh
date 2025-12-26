@@ -102,6 +102,103 @@ install_debian_packages() {
     rm -rf /var/lib/apt/lists/*
 }
 
+# Alpine Linux packages
+install_alpine_packages() {
+    local package_list=""
+    if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
+        package_list="${package_list} \
+        bat \
+        bind-tools \
+        fzf \
+        git \
+        github-cli \
+        gnupg \
+        iproute2 \
+        ipset \
+        iptables \
+        iputils \
+        jq \
+        less \
+        netcat-openbsd \
+        procps-ng \
+        ripgrep \
+        sqlite \
+        sudo \
+        tmux \
+        unzip \
+        vim \
+        wget"
+    fi
+
+    # man pages (Alpine 3.12+)
+    if apk info man > /dev/null 2>&1; then
+        package_list="${package_list} man man-pages"
+    else
+        package_list="${package_list} mandoc man-pages"
+    fi
+
+    # eza (optional)
+    if [ "${ADD_EZA}" = "true" ]; then
+        package_list="${package_list} eza"
+    fi
+
+    # Install packages
+    echo "Packages to verify are installed: ${package_list}"
+    apk update
+    apk add --no-cache ${package_list}
+
+    # grpcurl (optional) - binary download
+    if [ "${ADD_GRPCURL}" = "true" ]; then
+        # https://github.com/fullstorydev/grpcurl/releases
+        GRPCURL_VERSION="1.9.3"
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+            x86_64)
+                GRPCURL_ARCH="x86_64"
+                ;;
+            aarch64)
+                GRPCURL_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for grpcurl: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /tmp/grpcurl.tar.gz "https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_${GRPCURL_ARCH}.tar.gz"
+        tar -xzf /tmp/grpcurl.tar.gz -C /usr/local/bin grpcurl
+        chmod +x /usr/local/bin/grpcurl
+        rm /tmp/grpcurl.tar.gz
+    fi
+
+    # hadolint (optional) - binary download
+    if [ "${ADD_HADOLINT}" = "true" ]; then
+        # https://github.com/hadolint/hadolint/releases
+        HADOLINT_VERSION="2.12.0"
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+            x86_64)
+                HADOLINT_ARCH="x86_64"
+                ;;
+            aarch64)
+                HADOLINT_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for hadolint: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}"
+        chmod +x /usr/local/bin/hadolint
+    fi
+
+    # Upgrade packages
+    if [ "${UPGRADE_PACKAGES}" = "true" ]; then
+        apk upgrade --no-cache
+    fi
+
+    PACKAGES_ALREADY_INSTALLED="true"
+}
+
 # ******************
 # ** Main section **
 # ******************
@@ -123,6 +220,8 @@ fi
 # Get an adjusted ID independent of distro variants
 if [ "${ID}" = "debian" ] || [ "${ID_LIKE}" = "debian" ]; then
     ADJUSTED_ID="debian"
+elif [ "${ID}" = "alpine" ]; then
+    ADJUSTED_ID="alpine"
 else
     echo "Linux distro ${ID} not supported."
     exit 1
@@ -132,6 +231,9 @@ fi
 case "${ADJUSTED_ID}" in
     "debian")
         install_debian_packages
+        ;;
+    "alpine")
+        install_alpine_packages
         ;;
 esac
 
