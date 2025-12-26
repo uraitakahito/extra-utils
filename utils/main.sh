@@ -5,6 +5,7 @@ set -e
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
+ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -60,6 +61,26 @@ install_debian_packages() {
         apt-get update -y
         apt-get -y install --no-install-recommends /tmp/${DEBFILENAME}
         rm /tmp/${DEBFILENAME}
+    fi
+
+    if [ "${ADD_HADOLINT}" = "true" ]; then
+        # https://github.com/hadolint/hadolint/releases
+        HADOLINT_VERSION="2.12.0"
+        ARCH=$(dpkg --print-architecture)
+        case "${ARCH}" in
+            amd64)
+                HADOLINT_ARCH="x86_64"
+                ;;
+            arm64)
+                HADOLINT_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for hadolint: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}
+        chmod +x /usr/local/bin/hadolint
     fi
 
     # Install the list of packages
