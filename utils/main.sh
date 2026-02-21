@@ -6,6 +6,7 @@ UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
+ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -199,6 +200,49 @@ install_alpine_packages() {
     PACKAGES_ALREADY_INSTALLED="true"
 }
 
+# Claude Code (distro-independent)
+install_claude_code() {
+    local target_user="${USERNAME:-""}"
+
+    if [ -z "${target_user}" ]; then
+        echo "Warning: USERNAME is not set. Installing Claude Code for root user."
+        echo "Set USERNAME environment variable to install for a specific user."
+        target_user="root"
+    fi
+
+    if ! id "${target_user}" > /dev/null 2>&1; then
+        echo "Error: User '${target_user}' does not exist."
+        exit 1
+    fi
+
+    if ! command -v curl > /dev/null 2>&1 && ! command -v wget > /dev/null 2>&1; then
+        echo "Error: Either curl or wget is required to install Claude Code."
+        exit 1
+    fi
+
+    echo "Installing Claude Code for user '${target_user}'..."
+
+    # Download installer to a temporary file for safer execution
+    local installer="/tmp/claude-install.sh"
+    if command -v curl > /dev/null 2>&1; then
+        curl -fsSL https://claude.ai/install.sh -o "${installer}"
+    else
+        wget -qO "${installer}" https://claude.ai/install.sh
+    fi
+
+    chmod +x "${installer}"
+
+    if [ "${target_user}" = "root" ]; then
+        bash "${installer}"
+    else
+        su - "${target_user}" -c "bash ${installer}"
+    fi
+
+    rm -f "${installer}"
+
+    echo "Claude Code installed successfully for user '${target_user}'."
+}
+
 # ******************
 # ** Main section **
 # ******************
@@ -236,6 +280,11 @@ case "${ADJUSTED_ID}" in
         install_alpine_packages
         ;;
 esac
+
+# Install Claude Code (distro-independent)
+if [ "${ADD_CLAUDE_CODE}" = "true" ]; then
+    install_claude_code
+fi
 
 # Write marker file
 if [ ! -d "/usr/local/etc/vscode-dev-containers" ]; then
