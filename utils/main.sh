@@ -6,6 +6,7 @@ UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
+ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
@@ -82,6 +83,10 @@ install_debian_packages() {
         esac
         wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}
         chmod +x /usr/local/bin/hadolint
+    fi
+
+    if [ "${ADD_MAKE}" = "true" ]; then
+        package_list="${package_list} make"
     fi
 
     # Install the list of packages
@@ -190,6 +195,11 @@ install_alpine_packages() {
         esac
         wget -qO /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}"
         chmod +x /usr/local/bin/hadolint
+    fi
+
+    # make (optional)
+    if [ "${ADD_MAKE}" = "true" ]; then
+        package_list="${package_list} make"
     fi
 
     # Upgrade packages
