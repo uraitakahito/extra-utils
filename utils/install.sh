@@ -6,6 +6,7 @@ UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
+ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 if [ "$(id -u)" -ne 0 ]; then
