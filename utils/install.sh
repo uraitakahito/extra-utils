@@ -7,6 +7,9 @@ ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
+# ADD_XXD: opt-in for `xxd`; currently a no-op because `vim` brings xxd in
+# transitively on both Debian/Alpine. See main.sh for full rationale.
+ADD_XXD="${ADDXXD:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 if [ "$(id -u)" -ne 0 ]; then
