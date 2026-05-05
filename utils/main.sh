@@ -7,6 +7,22 @@ ADD_EZA="${ADDEZA:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
+# ADD_XXD: opt-in to explicitly include the `xxd` hex-dump utility.
+#
+# History: This flag was added with the intent of providing an opt-in install
+# path for xxd, mirroring ADD_MAKE / ADD_EZA. During implementation it was
+# discovered that `xxd` is already pulled in transitively by the always-installed
+# `vim` package on both supported distros, so `xxd` is present on every build
+# regardless of ADDXXD's value:
+#   - Alpine 3.21: `vim` package directly depends on the `xxd` package
+#   - Debian bookworm: `vim` -> `vim-common` -> `xxd`
+#
+# The flag is retained anyway for:
+#   1. Explicit declaration of intent (do not rely on vim's transitive dep)
+#   2. Forward-compatibility: if `vim` is ever removed from the always-installed
+#      package set, ADDXXD becomes functionally meaningful with no code change
+#   3. API consistency with the other ADD_xxx flags
+ADD_XXD="${ADDXXD:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
@@ -89,6 +105,12 @@ install_debian_packages() {
         package_list="${package_list} make"
     fi
 
+    # NOTE: redundant under the current always-installed `vim` package
+    # (vim -> vim-common -> xxd). See ADD_XXD declaration above for full rationale.
+    if [ "${ADD_XXD}" = "true" ]; then
+        package_list="${package_list} xxd"
+    fi
+
     # Install the list of packages
     echo "Packages to verify are installed: ${package_list}"
     rm -rf /var/lib/apt/lists/*
@@ -148,6 +170,18 @@ install_alpine_packages() {
         package_list="${package_list} eza"
     fi
 
+    # xxd (optional)
+    # NOTE: redundant under the current always-installed `vim` package
+    # (vim directly depends on xxd on Alpine 3.21). See ADD_XXD declaration above for full rationale.
+    if [ "${ADD_XXD}" = "true" ]; then
+        package_list="${package_list} xxd"
+    fi
+
+    # make (optional)
+    if [ "${ADD_MAKE}" = "true" ]; then
+        package_list="${package_list} make"
+    fi
+
     # Install packages
     echo "Packages to verify are installed: ${package_list}"
     apk update
@@ -195,11 +229,6 @@ install_alpine_packages() {
         esac
         wget -qO /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}"
         chmod +x /usr/local/bin/hadolint
-    fi
-
-    # make (optional)
-    if [ "${ADD_MAKE}" = "true" ]; then
-        package_list="${package_list} make"
     fi
 
     # Upgrade packages
