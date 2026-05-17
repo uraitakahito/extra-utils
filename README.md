@@ -1,8 +1,8 @@
 ## 開発時の動作確認手順
 
 ```bash
-curl -L -O https://raw.githubusercontent.com/uraitakahito/dotfiles/refs/heads/main/Dockerfile
-curl -L -O https://raw.githubusercontent.com/uraitakahito/dotfiles/refs/heads/main/docker-entrypoint.sh
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/Dockerfile.dev
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/docker-entrypoint.sh
 chmod 755 docker-entrypoint.sh
 ```
 
