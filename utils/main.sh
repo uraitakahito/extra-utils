@@ -4,6 +4,7 @@ set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
+ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
@@ -24,6 +25,11 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 #   3. API consistency with the other ADD_xxx flags
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
+
+# Pinned versions for GitHub-released binaries (env-overridable)
+GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
+GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
+HADOLINT_VERSION="${HADOLINTVERSION:-"2.12.0"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -70,9 +76,29 @@ install_debian_packages() {
         package_list="${package_list} eza"
     fi
 
+    if [ "${ADD_GITLEAKS}" = "true" ]; then
+        # https://github.com/gitleaks/gitleaks/releases
+        ARCH=$(dpkg --print-architecture)
+        case "${ARCH}" in
+            amd64)
+                GITLEAKS_ARCH="x64"
+                ;;
+            arm64)
+                GITLEAKS_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for gitleaks: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${GITLEAKS_ARCH}.tar.gz"
+        tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+        chmod +x /usr/local/bin/gitleaks
+        rm /tmp/gitleaks.tar.gz
+    fi
+
     if [ "${ADD_GRPCURL}" = "true" ]; then
         # https://github.com/fullstorydev/grpcurl/releases
-        GRPCURL_VERSION="1.9.3"
         ARCH=$(dpkg --print-architecture)
         DEBFILENAME="grpcurl_${GRPCURL_VERSION}_linux_${ARCH}.deb"
         wget -qO /tmp/${DEBFILENAME} https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/${DEBFILENAME}
@@ -83,7 +109,6 @@ install_debian_packages() {
 
     if [ "${ADD_HADOLINT}" = "true" ]; then
         # https://github.com/hadolint/hadolint/releases
-        HADOLINT_VERSION="2.12.0"
         ARCH=$(dpkg --print-architecture)
         case "${ARCH}" in
             amd64)
@@ -187,10 +212,31 @@ install_alpine_packages() {
     apk update
     apk add --no-cache ${package_list}
 
+    # gitleaks (optional) - binary download
+    if [ "${ADD_GITLEAKS}" = "true" ]; then
+        # https://github.com/gitleaks/gitleaks/releases
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+            x86_64)
+                GITLEAKS_ARCH="x64"
+                ;;
+            aarch64)
+                GITLEAKS_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for gitleaks: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${GITLEAKS_ARCH}.tar.gz"
+        tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+        chmod +x /usr/local/bin/gitleaks
+        rm /tmp/gitleaks.tar.gz
+    fi
+
     # grpcurl (optional) - binary download
     if [ "${ADD_GRPCURL}" = "true" ]; then
         # https://github.com/fullstorydev/grpcurl/releases
-        GRPCURL_VERSION="1.9.3"
         ARCH=$(uname -m)
         case "${ARCH}" in
             x86_64)
@@ -213,7 +259,6 @@ install_alpine_packages() {
     # hadolint (optional) - binary download
     if [ "${ADD_HADOLINT}" = "true" ]; then
         # https://github.com/hadolint/hadolint/releases
-        HADOLINT_VERSION="2.12.0"
         ARCH=$(uname -m)
         case "${ARCH}" in
             x86_64)

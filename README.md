@@ -1,8 +1,12 @@
+## 概要
+
+Docker 開発コンテナ向けの追加ユーティリティインストーラー。公式の [features](https://github.com/uraitakahito/features) と組み合わせ、Claude Code を含む開発環境を構築するための補助パッケージ群を提供します。
+
 ## 開発時の動作確認手順
 
 ```bash
-curl -L -O https://raw.githubusercontent.com/uraitakahito/dotfiles/refs/heads/main/Dockerfile
-curl -L -O https://raw.githubusercontent.com/uraitakahito/dotfiles/refs/heads/main/docker-entrypoint.sh
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/Dockerfile.dev
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/docker-entrypoint.sh
 chmod 755 docker-entrypoint.sh
 ```
 
