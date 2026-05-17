@@ -4,6 +4,7 @@ set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
+ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
@@ -11,6 +12,11 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 # transitively on both Debian/Alpine. See main.sh for full rationale.
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
+
+# Pinned versions for GitHub-released binaries (env-overridable)
+GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
+GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
+HADOLINT_VERSION="${HADOLINTVERSION:-"2.12.0"}"
 
 if [ "$(id -u)" -ne 0 ]; then
     printf 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.\n'
