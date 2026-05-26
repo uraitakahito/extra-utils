@@ -24,12 +24,14 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 #      package set, ADDXXD becomes functionally meaningful with no code change
 #   3. API consistency with the other ADD_xxx flags
 ADD_XXD="${ADDXXD:-"false"}"
+ADD_YQ="${ADDYQ:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
 HADOLINT_VERSION="${HADOLINTVERSION:-"2.12.0"}"
+YQ_VERSION="${YQVERSION:-"4.53.2"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -124,6 +126,25 @@ install_debian_packages() {
         esac
         wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}
         chmod +x /usr/local/bin/hadolint
+    fi
+
+    if [ "${ADD_YQ}" = "true" ]; then
+        # https://github.com/mikefarah/yq/releases
+        ARCH=$(dpkg --print-architecture)
+        case "${ARCH}" in
+            amd64)
+                YQ_ARCH="amd64"
+                ;;
+            arm64)
+                YQ_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for yq: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_${YQ_ARCH}"
+        chmod +x /usr/local/bin/yq
     fi
 
     if [ "${ADD_MAKE}" = "true" ]; then
@@ -274,6 +295,26 @@ install_alpine_packages() {
         esac
         wget -qO /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-${HADOLINT_ARCH}"
         chmod +x /usr/local/bin/hadolint
+    fi
+
+    # yq (optional) - binary download
+    if [ "${ADD_YQ}" = "true" ]; then
+        # https://github.com/mikefarah/yq/releases
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+            x86_64)
+                YQ_ARCH="amd64"
+                ;;
+            aarch64)
+                YQ_ARCH="arm64"
+                ;;
+            *)
+                echo "Unsupported architecture for yq: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_${YQ_ARCH}"
+        chmod +x /usr/local/bin/yq
     fi
 
     # Upgrade packages
