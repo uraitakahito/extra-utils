@@ -3,6 +3,9 @@
 set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
+ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
+ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
+ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
@@ -12,9 +15,6 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 # transitively on both Debian/Alpine. See main.sh for full rationale.
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_YQ="${ADDYQ:-"false"}"
-ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
-ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
-ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
