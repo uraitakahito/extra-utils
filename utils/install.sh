@@ -12,6 +12,8 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 # transitively on both Debian/Alpine. See main.sh for full rationale.
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_YQ="${ADDYQ:-"false"}"
+ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
+ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
@@ -19,6 +21,8 @@ GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
 HADOLINT_VERSION="${HADOLINTVERSION:-"2.12.0"}"
 YQ_VERSION="${YQVERSION:-"4.53.2"}"
+CFN_GUARD_VERSION="${CFNGUARDVERSION:-"3.2.0"}"
+CFN_LINT_VERSION="${CFNLINTVERSION:-"1.51.2"}"
 
 if [ "$(id -u)" -ne 0 ]; then
     printf 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.\n'

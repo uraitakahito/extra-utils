@@ -25,6 +25,8 @@ ADD_MAKE="${ADDMAKE:-"false"}"
 #   3. API consistency with the other ADD_xxx flags
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_YQ="${ADDYQ:-"false"}"
+ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
+ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
@@ -32,6 +34,8 @@ GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
 HADOLINT_VERSION="${HADOLINTVERSION:-"2.12.0"}"
 YQ_VERSION="${YQVERSION:-"4.53.2"}"
+CFN_GUARD_VERSION="${CFNGUARDVERSION:-"3.2.0"}"
+CFN_LINT_VERSION="${CFNLINTVERSION:-"1.51.2"}"
 
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common-packages-ex"
 
@@ -147,6 +151,31 @@ install_debian_packages() {
         chmod +x /usr/local/bin/yq
     fi
 
+    if [ "${ADD_CFN_GUARD}" = "true" ]; then
+        # https://github.com/aws-cloudformation/cloudformation-guard/releases
+        # The release tag has NO leading "v" (e.g. 3.2.0). The "v3" in the asset
+        # name is the major-version constant, not the pin. The binary is statically
+        # linked, so the same artifact runs on both glibc (Debian) and musl (Alpine).
+        ARCH=$(dpkg --print-architecture)
+        case "${ARCH}" in
+            amd64)
+                CFN_GUARD_ARCH="x86_64"
+                ;;
+            arm64)
+                CFN_GUARD_ARCH="aarch64"
+                ;;
+            *)
+                echo "Unsupported architecture for cfn-guard: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        CFN_GUARD_DIR="cfn-guard-v3-${CFN_GUARD_ARCH}-linux-latest"
+        wget -qO /tmp/cfn-guard.tar.gz "https://github.com/aws-cloudformation/cloudformation-guard/releases/download/${CFN_GUARD_VERSION}/${CFN_GUARD_DIR}.tar.gz"
+        tar -xzf /tmp/cfn-guard.tar.gz -C /usr/local/bin --strip-components=1 "${CFN_GUARD_DIR}/cfn-guard"
+        chmod +x /usr/local/bin/cfn-guard
+        rm /tmp/cfn-guard.tar.gz
+    fi
+
     if [ "${ADD_MAKE}" = "true" ]; then
         package_list="${package_list} make"
     fi
@@ -155,6 +184,11 @@ install_debian_packages() {
     # (vim -> vim-common -> xxd). See ADD_XXD declaration above for full rationale.
     if [ "${ADD_XXD}" = "true" ]; then
         package_list="${package_list} xxd"
+    fi
+
+    # cfn-lint Python runtime (optional); the venv is built later in install_cfn_lint()
+    if [ "${ADD_CFN_LINT}" = "true" ]; then
+        package_list="${package_list} python3 python3-venv"
     fi
 
     # Install the list of packages
@@ -226,6 +260,11 @@ install_alpine_packages() {
     # make (optional)
     if [ "${ADD_MAKE}" = "true" ]; then
         package_list="${package_list} make"
+    fi
+
+    # cfn-lint Python runtime (optional); py3-pip not needed (ensurepip is bundled)
+    if [ "${ADD_CFN_LINT}" = "true" ]; then
+        package_list="${package_list} python3"
     fi
 
     # Install packages
@@ -317,12 +356,48 @@ install_alpine_packages() {
         chmod +x /usr/local/bin/yq
     fi
 
+    # cfn-guard (optional) - statically linked binary (runs on musl too)
+    if [ "${ADD_CFN_GUARD}" = "true" ]; then
+        # https://github.com/aws-cloudformation/cloudformation-guard/releases
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+            x86_64)
+                CFN_GUARD_ARCH="x86_64"
+                ;;
+            aarch64)
+                CFN_GUARD_ARCH="aarch64"
+                ;;
+            *)
+                echo "Unsupported architecture for cfn-guard: ${ARCH}"
+                exit 1
+                ;;
+        esac
+        CFN_GUARD_DIR="cfn-guard-v3-${CFN_GUARD_ARCH}-linux-latest"
+        wget -qO /tmp/cfn-guard.tar.gz "https://github.com/aws-cloudformation/cloudformation-guard/releases/download/${CFN_GUARD_VERSION}/${CFN_GUARD_DIR}.tar.gz"
+        tar -xzf /tmp/cfn-guard.tar.gz -C /usr/local/bin --strip-components=1 "${CFN_GUARD_DIR}/cfn-guard"
+        chmod +x /usr/local/bin/cfn-guard
+        rm /tmp/cfn-guard.tar.gz
+    fi
+
     # Upgrade packages
     if [ "${UPGRADE_PACKAGES}" = "true" ]; then
         apk upgrade --no-cache
     fi
 
     PACKAGES_ALREADY_INSTALLED="true"
+}
+
+# cfn-lint (distro-independent, Python venv)
+install_cfn_lint() {
+    # https://github.com/aws-cloudformation/cfn-lint
+    # An isolated venv sidesteps PEP 668 ("externally-managed-environment") on
+    # both Debian and Alpine, and keeps cfn-lint's large dependency tree out of
+    # the system Python. The symlink exposes the CLI on PATH.
+    echo "Installing cfn-lint ${CFN_LINT_VERSION} into /opt/cfn-lint ..."
+    python3 -m venv /opt/cfn-lint
+    /opt/cfn-lint/bin/pip install --no-cache-dir "cfn-lint==${CFN_LINT_VERSION}"
+    ln -sf /opt/cfn-lint/bin/cfn-lint /usr/local/bin/cfn-lint
+    echo "cfn-lint installed: $(/usr/local/bin/cfn-lint --version)"
 }
 
 # Claude Code (distro-independent)
@@ -405,6 +480,11 @@ case "${ADJUSTED_ID}" in
         install_alpine_packages
         ;;
 esac
+
+# Install cfn-lint (distro-independent)
+if [ "${ADD_CFN_LINT}" = "true" ]; then
+    install_cfn_lint
+fi
 
 # Install Claude Code (distro-independent)
 if [ "${ADD_CLAUDE_CODE}" = "true" ]; then
