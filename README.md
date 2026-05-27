@@ -5,8 +5,8 @@ Docker 開発コンテナ向けの追加ユーティリティインストーラ�
 ## 開発時の動作確認手順
 
 ```bash
-curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/Dockerfile.dev
-curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.2.7/docker-entrypoint.sh
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.3.0/Dockerfile.dev
+curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.3.0/docker-entrypoint.sh
 chmod 755 docker-entrypoint.sh
 ```
 
