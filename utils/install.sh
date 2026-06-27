@@ -11,10 +11,16 @@ ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
+ADD_NGINX="${ADDNGINX:-"false"}"
 # ADD_XXD: opt-in for `xxd`; currently a no-op because `vim` brings xxd in
 # transitively on both Debian/Alpine. See main.sh for full rationale.
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_YQ="${ADDYQ:-"false"}"
+
+# Nginx docs server parameters (env-overridable). NGINX_DOC_ROOT is the default
+# target of the /srv/docs symlink; re-point at runtime with `docs-root <DIR>`.
+NGINX_PORT="${NGINXPORT:-"8080"}"
+NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"

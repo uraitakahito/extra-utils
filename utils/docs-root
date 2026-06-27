@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# docs-root [DIR] — re-point the Nginx docs root (the /srv/docs symlink) and apply it.
+#
+# The nginx config installed by install_nginx() has a fixed `root /srv/docs;`.
+# This helper repoints that symlink to DIR (default /app) so the served directory
+# can be chosen at runtime without touching the config. Relative paths are
+# normalized to absolute to avoid creating a symlink relative to /srv.
+#
+# Run as root, e.g.:  sudo docs-root /app/private-note/tmp
+#
+set -e
+
+target="${1:-/app}"
+[ -d "${target}" ] || { echo "docs-root: no such directory: ${target}" >&2; exit 1; }
+target="$(cd "${target}" && pwd)"            # normalize to an absolute path
+
+ln -sfn "${target}" /srv/docs                # atomically repoint the served root
+nginx -s reload 2>/dev/null || nginx         # new requests pick it up; start if not running
+echo "docs-root: /srv/docs -> ${target}"
