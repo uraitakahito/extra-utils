@@ -8,6 +8,7 @@ ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
+ADD_NGINX="${ADDNGINX:-"false"}"
 # ADD_XXD: opt-in to explicitly include the `xxd` hex-dump utility.
 #
 # History: This flag was added with the intent of providing an opt-in install
@@ -28,6 +29,12 @@ ADD_YQ="${ADDYQ:-"false"}"
 ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
 ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
+
+# Nginx docs server parameters (env-overridable). NGINX_DOC_ROOT is the default
+# target of the /srv/docs symlink; the served root can be re-pointed at runtime
+# with `docs-root <DIR>` (see install_nginx).
+NGINX_PORT="${NGINXPORT:-"8080"}"
+NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
@@ -443,6 +450,53 @@ install_claude_code() {
     echo "Claude Code installed successfully for user '${target_user}'."
 }
 
+# Nginx docs server (distro-independent orchestration).
+# Installs nginx, fixes the served root to the /srv/docs symlink (re-pointable at
+# runtime via docs-root), runs workers as ${USERNAME} so the bind-mounted /app is
+# readable, and ships the docs-root helper onto PATH.
+install_nginx() {
+    local conf_dir nginx_user="${USERNAME:-"root"}"
+
+    case "${ADJUSTED_ID}" in
+        debian)
+            apt-get update -y
+            apt-get -y install --no-install-recommends nginx
+            rm -f /etc/nginx/sites-enabled/default
+            conf_dir="/etc/nginx/conf.d"
+            ;;
+        alpine)
+            apk add --no-cache nginx
+            rm -f /etc/nginx/http.d/default.conf
+            conf_dir="/etc/nginx/http.d"
+            ;;
+    esac
+
+    # Run workers as the /app owner so the bind mount (and the symlink target) is readable.
+    sed -i "s/^user .*/user ${nginx_user};/" /etc/nginx/nginx.conf
+    chown -R "${nginx_user}" /var/lib/nginx /var/log/nginx 2>/dev/null || true
+
+    # Fix the served root to a symlink; the runtime target defaults to ${NGINX_DOC_ROOT}.
+    mkdir -p /srv
+    ln -sfn "${NGINX_DOC_ROOT}" /srv/docs
+
+    cat > "${conf_dir}/docs.conf" <<EOF
+server {
+    listen      0.0.0.0:${NGINX_PORT};
+    server_name _;
+    root        /srv/docs;
+    charset     utf-8;
+    autoindex   on;
+    location / { try_files \$uri \$uri/ =404; }
+}
+EOF
+
+    # Ship the runtime root-switch helper onto PATH ($0 is main.sh, so its dir is utils/).
+    install -m 0755 "$(dirname "$0")/docs-root" /usr/local/bin/docs-root
+
+    nginx -t
+    echo "Nginx ready: root=/srv/docs -> ${NGINX_DOC_ROOT} on :${NGINX_PORT} (worker=${nginx_user})"
+}
+
 # ******************
 # ** Main section **
 # ******************
@@ -489,6 +543,11 @@ fi
 # Install Claude Code (distro-independent)
 if [ "${ADD_CLAUDE_CODE}" = "true" ]; then
     install_claude_code
+fi
+
+# Install Nginx docs server (distro-independent)
+if [ "${ADD_NGINX}" = "true" ]; then
+    install_nginx
 fi
 
 # Write marker file
