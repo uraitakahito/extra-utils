@@ -26,6 +26,7 @@ ADD_NGINX="${ADDNGINX:-"false"}"
 #   3. API consistency with the other ADD_xxx flags
 ADD_XXD="${ADDXXD:-"false"}"
 ADD_YQ="${ADDYQ:-"false"}"
+ADD_AWS_CLI="${ADDAWSCLI:-"false"}"
 ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
 ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
@@ -36,6 +37,9 @@ ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 NGINX_PORT="${NGINXPORT:-"8080"}"
 NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 
+# AWS CLI v2 official installer version (env-overridable). Honored on Debian/glibc only;
+# the Alpine path installs the distro's community `aws-cli` package (version not pinnable).
+AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
@@ -407,6 +411,41 @@ install_cfn_lint() {
     echo "cfn-lint installed: $(/usr/local/bin/cfn-lint --version)"
 }
 
+# AWS CLI v2 (distro-dependent)
+#   Debian/glibc: official bundled installer, pinned to ${AWS_CLI_VERSION}.
+#   Alpine/musl:  the official installer is glibc-linked and will NOT run, so
+#                 install the community-repo `aws-cli` package (version follows
+#                 the distro and cannot be pinned to ${AWS_CLI_VERSION}).
+install_aws_cli() {
+    local ARCH AWS_CLI_ARCH
+    case "${ADJUSTED_ID}" in
+        debian)
+            # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+            ARCH=$(dpkg --print-architecture)
+            case "${ARCH}" in
+                amd64)
+                    AWS_CLI_ARCH="x86_64"
+                    ;;
+                arm64)
+                    AWS_CLI_ARCH="aarch64"
+                    ;;
+                *)
+                    echo "Unsupported architecture for aws-cli: ${ARCH}"
+                    exit 1
+                    ;;
+            esac
+            wget -qO /tmp/awscliv2.zip "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_CLI_ARCH}-${AWS_CLI_VERSION}.zip"
+            unzip -q /tmp/awscliv2.zip -d /tmp
+            /tmp/aws/install
+            rm -rf /tmp/aws /tmp/awscliv2.zip
+            ;;
+        alpine)
+            apk add --no-cache aws-cli
+            ;;
+    esac
+    echo "aws-cli installed: $(aws --version)"
+}
+
 # Claude Code (distro-independent)
 install_claude_code() {
     local target_user="${USERNAME:-""}"
@@ -534,6 +573,11 @@ case "${ADJUSTED_ID}" in
         install_alpine_packages
         ;;
 esac
+
+# Install AWS CLI (distro-dependent)
+if [ "${ADD_AWS_CLI}" = "true" ]; then
+    install_aws_cli
+fi
 
 # Install cfn-lint (distro-independent)
 if [ "${ADD_CFN_LINT}" = "true" ]; then

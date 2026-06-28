@@ -3,6 +3,7 @@
 set -e
 
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
+ADD_AWS_CLI="${ADDAWSCLI:-"false"}"
 ADD_CFN_GUARD="${ADDCFNGUARD:-"false"}"
 ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
@@ -22,6 +23,9 @@ ADD_YQ="${ADDYQ:-"false"}"
 NGINX_PORT="${NGINXPORT:-"8080"}"
 NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 
+# AWS CLI v2 official installer version (env-overridable). Honored on Debian/glibc only;
+# the Alpine path installs the distro's community `aws-cli` package (version not pinnable).
+AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
