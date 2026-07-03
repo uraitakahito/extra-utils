@@ -11,6 +11,7 @@ ADD_EZA="${ADDEZA:-"false"}"
 ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
+ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_NGINX="${ADDNGINX:-"false"}"
 # ADD_XXD: opt-in for `xxd`; currently a no-op because `vim` brings xxd in
