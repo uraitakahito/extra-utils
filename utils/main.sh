@@ -7,6 +7,7 @@ ADD_EZA="${ADDEZA:-"false"}"
 ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
+ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_NGINX="${ADDNGINX:-"false"}"
 # ADD_XXD: opt-in to explicitly include the `xxd` hex-dump utility.
@@ -191,6 +192,16 @@ install_debian_packages() {
         package_list="${package_list} make"
     fi
 
+    # ImageMagick — CLI image editing for the AI agent (convert/mogrify/identify).
+    # Debian bookworm ships ImageMagick 6; the base package pulls the PNG/JPEG/WebP/
+    # TIFF/GIF delegates as hard deps, so --no-install-recommends still yields a
+    # working raster toolchain. A lightweight Japanese Gothic font (IPAex) is added
+    # alongside so the AI can annotate images with Japanese text (no CJK font ships
+    # in the base image, and -annotate uses a single face with no fallback).
+    if [ "${ADD_IMAGEMAGICK}" = "true" ]; then
+        package_list="${package_list} imagemagick fonts-ipaexfont-gothic"
+    fi
+
     # NOTE: redundant under the current always-installed `vim` package
     # (vim -> vim-common -> xxd). See ADD_XXD declaration above for full rationale.
     if [ "${ADD_XXD}" = "true" ]; then
@@ -271,6 +282,14 @@ install_alpine_packages() {
     # make (optional)
     if [ "${ADD_MAKE}" = "true" ]; then
         package_list="${package_list} make"
+    fi
+
+    # ImageMagick (optional) — Alpine ships IM7 (`magick`). Format support is
+    # modularized into subpackages, so JPEG/WebP are added explicitly for parity
+    # with the Debian build (PNG is covered by the base package). font-ipa provides
+    # a Japanese face so the AI can annotate images with Japanese text.
+    if [ "${ADD_IMAGEMAGICK}" = "true" ]; then
+        package_list="${package_list} imagemagick imagemagick-jpeg imagemagick-webp font-ipa"
     fi
 
     # cfn-lint Python runtime (optional); py3-pip not needed (ensurepip is bundled)
