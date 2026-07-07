@@ -14,6 +14,7 @@ ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_NGINX="${ADDNGINX:-"false"}"
+ADD_UV="${ADDUV:-"false"}"
 # ADD_XXD: opt-in for `xxd`; currently a no-op because `vim` brings xxd in
 # transitively on both Debian/Alpine. See main.sh for full rationale.
 ADD_XXD="${ADDXXD:-"false"}"
@@ -27,6 +28,9 @@ NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 # AWS CLI v2 official installer version (env-overridable). Honored on Debian/glibc only;
 # the Alpine path installs the distro's community `aws-cli` package (version not pinnable).
 AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
+# uv standalone-installer version (env-overridable). uvx (= npx for Python) launches
+# Python MCP servers such as mcp-google-sheets.
+UV_VERSION="${UVVERSION:-"0.11.27"}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
