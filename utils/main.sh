@@ -10,6 +10,7 @@ ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
 ADD_MAKE="${ADDMAKE:-"false"}"
 ADD_NGINX="${ADDNGINX:-"false"}"
+ADD_UV="${ADDUV:-"false"}"
 # ADD_XXD: opt-in to explicitly include the `xxd` hex-dump utility.
 #
 # History: This flag was added with the intent of providing an opt-in install
@@ -41,6 +42,9 @@ NGINX_DOC_ROOT="${NGINXDOCROOT:-"/app"}"
 # AWS CLI v2 official installer version (env-overridable). Honored on Debian/glibc only;
 # the Alpine path installs the distro's community `aws-cli` package (version not pinnable).
 AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
+# uv standalone-installer version (env-overridable). uvx (= npx for Python) launches
+# Python MCP servers such as mcp-google-sheets.
+UV_VERSION="${UVVERSION:-"0.11.27"}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
@@ -465,6 +469,15 @@ install_aws_cli() {
     echo "aws-cli installed: $(aws --version)"
 }
 
+# uv (distro-independent): official standalone installer, pinned to ${UV_VERSION}.
+# Installs `uv` and `uvx` into /usr/local/bin (ARCH auto-detected, so no case block).
+# uvx is the "npx for Python" that launches Python MCP servers (e.g. mcp-google-sheets).
+install_uv() {
+    wget -qO- "https://astral.sh/uv/${UV_VERSION}/install.sh" \
+        | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh
+    echo "uv installed: $(uv --version) / uvx: $(command -v uvx)"
+}
+
 # Claude Code (distro-independent)
 install_claude_code() {
     local target_user="${USERNAME:-""}"
@@ -596,6 +609,11 @@ esac
 # Install AWS CLI (distro-dependent)
 if [ "${ADD_AWS_CLI}" = "true" ]; then
     install_aws_cli
+fi
+
+# Install uv (distro-independent)
+if [ "${ADD_UV}" = "true" ]; then
+    install_uv
 fi
 
 # Install cfn-lint (distro-independent)
