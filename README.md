@@ -8,7 +8,7 @@ Docker 開発コンテナ向けの追加ユーティリティインストーラ�
 Dockerfile を取得して使います。ランタイムごとに 2 本あるので、使う方を選んでください。
 
 ```bash
-BASE=https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.5.18
+BASE=https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.5.19
 
 # Docker / OrbStack の場合
 curl -L -O "$BASE/Dockerfile.dev.docker"
@@ -84,6 +84,6 @@ graphify install --project  # このリポジトリ(./.claude/)へ。フック�
 
 ## 主な使用例
 
-- [hello-javascript/Dockerfile.dev.docker](https://github.com/uraitakahito/hello-javascript/blob/1.5.18/Dockerfile.dev.docker) — Docker / OrbStack 版
-- [hello-javascript/Dockerfile.dev.container](https://github.com/uraitakahito/hello-javascript/blob/1.5.18/Dockerfile.dev.container) — Apple container 版
+- [hello-javascript/Dockerfile.dev.docker](https://github.com/uraitakahito/hello-javascript/blob/1.5.19/Dockerfile.dev.docker) — Docker / OrbStack 版
+- [hello-javascript/Dockerfile.dev.container](https://github.com/uraitakahito/hello-javascript/blob/1.5.19/Dockerfile.dev.container) — Apple container 版
 
