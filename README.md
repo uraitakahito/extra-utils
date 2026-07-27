@@ -4,9 +4,19 @@ Docker 開発コンテナ向けの追加ユーティリティインストーラ�
 
 ## 開発時の動作確認手順
 
+[hello-javascript](https://github.com/uraitakahito/hello-javascript) の開発用
+Dockerfile を取得して使います。ランタイムごとに 2 本あるので、使う方を選んでください。
+
 ```bash
-curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.3.0/Dockerfile.dev
-curl -L -O https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.3.0/docker-entrypoint.sh
+BASE=https://raw.githubusercontent.com/uraitakahito/hello-javascript/refs/tags/1.5.18
+
+# Docker / OrbStack の場合
+curl -L -O "$BASE/Dockerfile.dev.docker"
+
+# Apple container の場合
+curl -L -O "$BASE/Dockerfile.dev.container"
+
+curl -L -O "$BASE/docker-entrypoint.sh"
 chmod 755 docker-entrypoint.sh
 ```
 
@@ -42,5 +52,6 @@ RUN ADDUV=true ADDGRAPHIFY=true \
 
 ## 主な使用例
 
-- [hello-javascript/Dockerfile.dev](https://github.com/uraitakahito/hello-javascript/blob/62e238f278fe989283b9b47b17c04283b6bdab9a/Dockerfile.dev)
+- [hello-javascript/Dockerfile.dev.docker](https://github.com/uraitakahito/hello-javascript/blob/1.5.18/Dockerfile.dev.docker) — Docker / OrbStack 版
+- [hello-javascript/Dockerfile.dev.container](https://github.com/uraitakahito/hello-javascript/blob/1.5.18/Dockerfile.dev.container) — Apple container 版
 
