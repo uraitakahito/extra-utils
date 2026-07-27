@@ -9,6 +9,7 @@ ADD_CFN_LINT="${ADDCFNLINT:-"false"}"
 ADD_CLAUDE_CODE="${ADDCLAUDECODE:-"false"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
+ADD_GRAPHIFY="${ADDGRAPHIFY:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
@@ -31,6 +32,13 @@ AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
 # uv standalone-installer version (env-overridable). uvx (= npx for Python) launches
 # Python MCP servers such as mcp-google-sheets.
 UV_VERSION="${UVVERSION:-"0.11.27"}"
+# graphify: the PyPI package is `graphifyy` (double y) — `graphify` on PyPI is an
+# unrelated project — while the command it installs is `graphify`. Installed with
+# `uv tool install`, so ADDUV=true is required alongside ADDGRAPHIFY=true.
+# GRAPHIFY_EXTRAS is a comma-separated subset of mcp / neo4j / falkordb / pdf /
+# watch / svg; empty installs the base package only.
+GRAPHIFY_VERSION="${GRAPHIFYVERSION:-"0.9.28"}"
+GRAPHIFY_EXTRAS="${GRAPHIFYEXTRAS:-""}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
