@@ -52,13 +52,35 @@ RUN ADDUV=true ADDGRAPHIFY=true \
   同名の別プロジェクトが PyPI にあるため、この違いは意図的なものです。
 - `uvx graphify` は動きません。`uv tool run` は第 1 語をパッケージ名として解決するので、
   一時実行するなら `uvx --from graphifyy graphify ...` と書きます。
-- **スキル登録はイメージに含めていません。** ホームやカレントディレクトリを書き換える操作で、
-  ビルド時に root で実行しても利用者には効かないためです。コンテナ内で 1 度実行してください:
 
-  ```sh
-  graphify install            # ユーザプロファイルへ登録
-  graphify install --project  # カレントのリポジトリへ登録
-  ```
+### スキル登録（`graphify install`）
+
+CLI を入れただけでは AI アシスタントは graphify を知りません。`graphify install` が
+スキル定義と「コードの質問はまずグラフに問い合わせろ」という指示を書き込みます。
+ホームやカレントディレクトリを書き換える操作なので**イメージには含めていません**
+（ビルド時に root で実行しても利用者には効きません）。コンテナ内で 1 度実行してください。
+
+```sh
+# 開発ユーザでコンテナに入り、対象リポジトリのルートで
+graphify install            # ユーザプロファイル(~/.claude/)へ。全プロジェクトに効く
+graphify install --project  # このリポジトリ(./.claude/)へ。フックが付くのはこちらだけ
+```
+
+| スコープ | 生成物 | フック |
+| --- | --- | --- |
+| 既定 | `~/.claude/CLAUDE.md`, `~/.claude/skills/graphify/` | なし |
+| `--project` | `./CLAUDE.md`, `./.claude/`（`CLAUDE.md` / `skills/graphify/` / `settings.json`） | あり |
+
+- 生成物はすべて Markdown と JSON の設定ファイルです。`--project` のときだけ
+  `.claude/settings.json` に PreToolUse フックが登録され、`Bash|Grep` と `Read|Glob` の
+  直前に graphify が割り込みます。`--strict`（`graphify query` が 1 度通るまで最初の生ファイル
+  読みをブロック）は Claude Code の `--project` 専用です。
+- `--platform` で Claude Code 以外にも書けます（`codex` / `cursor` / `gemini` など 23 種）。
+- **フックには実行時のパスがそのまま焼き込まれます。** このイメージで PATH 経由で叩くと
+  `/usr/local/bin/graphify hook-guard ...` が記録されます。コンテナ内では安定しますが、
+  ホストには無いパスなので `.claude/settings.json` を共有リポジトリにコミットすると
+  ホスト側の利用者で壊れます。`GRAPHIFYVERSION` を上げてパスが変わった場合も入れ直しが要ります。
+- 同じコマンドの再実行で上書きされるので、やり直しは安全です。
 
 ## 主な使用例
 
