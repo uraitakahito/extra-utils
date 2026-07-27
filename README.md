@@ -22,6 +22,16 @@ chmod 755 docker-entrypoint.sh
 
 続きの手順はDockerfile内のコメントを参照してください。
 
+## cfn-lint
+
+`ADDCFNLINT=true` で [cfn-lint](https://github.com/aws-cloudformation/cfn-lint) を
+`/usr/local/bin/cfn-lint` に入れます。**`ADDUV=true` が前提**です。
+
+版は `CFNLINTVERSION`（既定 `1.51.2`）で指定します。
+
+graphify と同じく `uv tool install` を使うので、イメージに `python3` は要りません
+（適切な Python が無ければ uv が取得します）。
+
 ## graphify
 
 `ADDGRAPHIFY=true` で [graphify](https://github.com/Graphify-Labs/graphify) の CLI を
