@@ -5,6 +5,7 @@ set -e
 UPGRADE_PACKAGES="${UPGRADEPACKAGES:-"true"}"
 ADD_EZA="${ADDEZA:-"false"}"
 ADD_GITLEAKS="${ADDGITLEAKS:-"false"}"
+ADD_GRAPHIFY="${ADDGRAPHIFY:-"false"}"
 ADD_GRPCURL="${ADDGRPCURL:-"false"}"
 ADD_HADOLINT="${ADDHADOLINT:-"false"}"
 ADD_IMAGEMAGICK="${ADDIMAGEMAGICK:-"false"}"
@@ -45,6 +46,13 @@ AWS_CLI_VERSION="${AWSCLIVERSION:-"2.27.41"}"
 # uv standalone-installer version (env-overridable). uvx (= npx for Python) launches
 # Python MCP servers such as mcp-google-sheets.
 UV_VERSION="${UVVERSION:-"0.11.27"}"
+# graphify: the PyPI package is `graphifyy` (double y) — `graphify` on PyPI is an
+# unrelated project — while the command it installs is `graphify`. Installed with
+# `uv tool install`, so ADDUV=true is required alongside ADDGRAPHIFY=true.
+# GRAPHIFY_EXTRAS is a comma-separated subset of mcp / neo4j / falkordb / pdf /
+# watch / svg; empty installs the base package only.
+GRAPHIFY_VERSION="${GRAPHIFYVERSION:-"0.9.28"}"
+GRAPHIFY_EXTRAS="${GRAPHIFYEXTRAS:-""}"
 # Pinned versions for GitHub-released binaries (env-overridable)
 GITLEAKS_VERSION="${GITLEAKSVERSION:-"8.30.1"}"
 GRPCURL_VERSION="${GRPCURLVERSION:-"1.9.3"}"
@@ -478,6 +486,52 @@ install_uv() {
     echo "uv installed: $(uv --version) / uvx: $(command -v uvx)"
 }
 
+# graphify (distro-independent): installed with `uv tool install`, so it needs
+# ADDUV=true. Two names are in play: the PyPI package is `graphifyy` (double y —
+# `graphify` on PyPI is an unrelated project), while the command it installs is
+# `graphify`. For the same reason `uvx graphify` does not work: `uv tool run`
+# reads the first word as a package, so it would have to be
+# `uvx --from graphifyy graphify`.
+#
+# Two uv env vars are needed, and only setting one of them is a trap. This script
+# runs as root, and uv defaults to ~/.local for both halves of a tool install:
+#
+#   UV_TOOL_DIR      the environment itself   (default ~/.local/share/uv/tools)
+#   UV_TOOL_BIN_DIR  the symlink on PATH      (default ~/.local/bin)
+#
+# Setting only UV_TOOL_BIN_DIR puts a link in /usr/local/bin pointing into
+# /root/.local/share/uv/tools — and /root is mode 700, so the developer user gets
+# "command not found" from a link they can see but cannot follow. The build looks
+# successful and root can run the command, which is what makes it easy to miss.
+# Both are redirected to shared locations; /usr/local/bin is where install_uv()
+# puts uv itself, so the tool lands beside it.
+#
+# No python3 required on the image: uv fetches a CPython for the tool's own
+# environment (graphifyy requires >=3.10). That is the reason for uv over pip
+# here — cf. install_cfn_lint(), which has to build a venv by hand first.
+#
+# Registering the skill (`graphify install`) is deliberately NOT done at build
+# time: it writes into a user's home or the current repository, so doing it as
+# root during a build would either miss the developer user or land nowhere
+# useful. It is a one-off command for whoever uses the container.
+install_graphify() {
+    if ! command -v uv > /dev/null 2>&1; then
+        echo "Error: graphify is installed with uv. Set ADDUV=true alongside ADDGRAPHIFY=true." >&2
+        exit 1
+    fi
+
+    local spec="graphifyy==${GRAPHIFY_VERSION}"
+    if [ -n "${GRAPHIFY_EXTRAS}" ]; then
+        spec="graphifyy[${GRAPHIFY_EXTRAS}]==${GRAPHIFY_VERSION}"
+    fi
+
+    echo "Installing ${spec} with uv ..."
+    env UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin uv tool install "${spec}"
+    # World-readable so every user of the image can follow the symlink.
+    chmod -R a+rX /opt/uv-tools
+    echo "graphify installed: $(graphify --version)"
+}
+
 # Claude Code (distro-independent)
 install_claude_code() {
     local target_user="${USERNAME:-""}"
@@ -614,6 +668,11 @@ fi
 # Install uv (distro-independent)
 if [ "${ADD_UV}" = "true" ]; then
     install_uv
+fi
+
+# Install graphify (distro-independent; requires uv)
+if [ "${ADD_GRAPHIFY}" = "true" ]; then
+    install_graphify
 fi
 
 # Install cfn-lint (distro-independent)
