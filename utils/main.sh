@@ -220,10 +220,6 @@ install_debian_packages() {
         package_list="${package_list} xxd"
     fi
 
-    # cfn-lint Python runtime (optional); the venv is built later in install_cfn_lint()
-    if [ "${ADD_CFN_LINT}" = "true" ]; then
-        package_list="${package_list} python3 python3-venv"
-    fi
 
     # Install the list of packages
     echo "Packages to verify are installed: ${package_list}"
@@ -304,10 +300,6 @@ install_alpine_packages() {
         package_list="${package_list} imagemagick imagemagick-jpeg imagemagick-webp font-ipa"
     fi
 
-    # cfn-lint Python runtime (optional); py3-pip not needed (ensurepip is bundled)
-    if [ "${ADD_CFN_LINT}" = "true" ]; then
-        package_list="${package_list} python3"
-    fi
 
     # Install packages
     echo "Packages to verify are installed: ${package_list}"
@@ -432,14 +424,14 @@ install_alpine_packages() {
 # cfn-lint (distro-independent, Python venv)
 install_cfn_lint() {
     # https://github.com/aws-cloudformation/cfn-lint
-    # An isolated venv sidesteps PEP 668 ("externally-managed-environment") on
-    # both Debian and Alpine, and keeps cfn-lint's large dependency tree out of
-    # the system Python. The symlink exposes the CLI on PATH.
-    echo "Installing cfn-lint ${CFN_LINT_VERSION} into /opt/cfn-lint ..."
-    python3 -m venv /opt/cfn-lint
-    /opt/cfn-lint/bin/pip install --no-cache-dir "cfn-lint==${CFN_LINT_VERSION}"
-    ln -sf /opt/cfn-lint/bin/cfn-lint /usr/local/bin/cfn-lint
-    echo "cfn-lint installed: $(/usr/local/bin/cfn-lint --version)"
+    # Installed with uv, so ADDUV=true is required. uv gives the isolation the
+    # hand-built venv used to provide (PEP 668 "externally-managed-environment"
+    # never comes up, and cfn-lint's large dependency tree stays out of the
+    # system Python) and supplies the interpreter too, so the image no longer
+    # needs python3 / python3-venv for this.
+    echo "Installing cfn-lint ${CFN_LINT_VERSION} with uv ..."
+    uv_tool_install "cfn-lint==${CFN_LINT_VERSION}"
+    echo "cfn-lint installed: $(cfn-lint --version)"
 }
 
 # AWS CLI v2 (distro-dependent)
@@ -486,6 +478,44 @@ install_uv() {
     echo "uv installed: $(uv --version) / uvx: $(command -v uvx)"
 }
 
+# Install a CLI with `uv tool install` so that *every* user of the image can run
+# it, not just root.
+#
+# uv keeps three things under ~/.local by default, and this script runs as root:
+#
+#   UV_TOOL_DIR            the tool's own environment
+#   UV_TOOL_BIN_DIR        the symlink placed on PATH
+#   UV_PYTHON_INSTALL_DIR  the interpreter uv downloads when the image has no
+#                          suitable one
+#
+# Leaving any of the three under /root produces the same failure, because /root
+# is mode 700: the command sits on PATH but a non-root user cannot follow it
+# ("command not found", or "bad interpreter: Permission denied" when only the
+# interpreter is out of reach). Root can run it and the build reports success,
+# which is what makes this easy to ship by accident.
+#
+# The interpreter one is the subtle case: whether uv downloads a Python at all
+# depends on what the image happens to have. Debian pulls python3 in
+# transitively today, so a tool can work by luck here and break on a leaner base.
+uv_tool_install() {
+    if ! command -v uv > /dev/null 2>&1; then
+        echo "Error: this tool is installed with uv. Set ADDUV=true." >&2
+        exit 1
+    fi
+
+    env UV_TOOL_DIR=/opt/uv-tools \
+        UV_TOOL_BIN_DIR=/usr/local/bin \
+        UV_PYTHON_INSTALL_DIR=/opt/uv-python \
+        uv tool install "$@"
+
+    # a+rX: readable everywhere, executable only where it already was (dirs and
+    # binaries), so the symlinks in /usr/local/bin stay followable.
+    chmod -R a+rX /opt/uv-tools
+    if [ -d /opt/uv-python ]; then
+        chmod -R a+rX /opt/uv-python
+    fi
+}
+
 # graphify (distro-independent): installed with `uv tool install`, so it needs
 # ADDUV=true. Two names are in play: the PyPI package is `graphifyy` (double y —
 # `graphify` on PyPI is an unrelated project), while the command it installs is
@@ -493,42 +523,24 @@ install_uv() {
 # reads the first word as a package, so it would have to be
 # `uvx --from graphifyy graphify`.
 #
-# Two uv env vars are needed, and only setting one of them is a trap. This script
-# runs as root, and uv defaults to ~/.local for both halves of a tool install:
+# Installation goes through uv_tool_install(), which is what keeps the command
+# usable by the developer user and not only root — see the comment there.
 #
-#   UV_TOOL_DIR      the environment itself   (default ~/.local/share/uv/tools)
-#   UV_TOOL_BIN_DIR  the symlink on PATH      (default ~/.local/bin)
-#
-# Setting only UV_TOOL_BIN_DIR puts a link in /usr/local/bin pointing into
-# /root/.local/share/uv/tools — and /root is mode 700, so the developer user gets
-# "command not found" from a link they can see but cannot follow. The build looks
-# successful and root can run the command, which is what makes it easy to miss.
-# Both are redirected to shared locations; /usr/local/bin is where install_uv()
-# puts uv itself, so the tool lands beside it.
-#
-# No python3 required on the image: uv fetches a CPython for the tool's own
-# environment (graphifyy requires >=3.10). That is the reason for uv over pip
-# here — cf. install_cfn_lint(), which has to build a venv by hand first.
+# No python3 required on the image: uv supplies an interpreter for the tool's own
+# environment (graphifyy requires >=3.10).
 #
 # Registering the skill (`graphify install`) is deliberately NOT done at build
 # time: it writes into a user's home or the current repository, so doing it as
 # root during a build would either miss the developer user or land nowhere
 # useful. It is a one-off command for whoever uses the container.
 install_graphify() {
-    if ! command -v uv > /dev/null 2>&1; then
-        echo "Error: graphify is installed with uv. Set ADDUV=true alongside ADDGRAPHIFY=true." >&2
-        exit 1
-    fi
-
     local spec="graphifyy==${GRAPHIFY_VERSION}"
     if [ -n "${GRAPHIFY_EXTRAS}" ]; then
         spec="graphifyy[${GRAPHIFY_EXTRAS}]==${GRAPHIFY_VERSION}"
     fi
 
     echo "Installing ${spec} with uv ..."
-    env UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin uv tool install "${spec}"
-    # World-readable so every user of the image can follow the symlink.
-    chmod -R a+rX /opt/uv-tools
+    uv_tool_install "${spec}"
     echo "graphify installed: $(graphify --version)"
 }
 
